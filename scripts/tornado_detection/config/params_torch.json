@@ -1,5 +1,5 @@
 {
-    "epochs":500,
+    "epochs":32,
     "batch_size":64,
     "train_years":[2013,2014,2015,2016,2017,2018,2019,2020],
     "val_years":[2021,2022],
@@ -17,5 +17,6 @@
     "loss":"cce",
     "head":"maxpool",
     "exp_name":"tornado_baseline",
-    "dataloader":"torch-tfds"
+    "dataloader":"torch-tfds",
+    "enable_tensorboard":true
 }
