@@ -12,3 +12,4 @@ tornet_baseline*
 *nohup.out
 .nfs*
 latest
+logs/
