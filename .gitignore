@@ -9,3 +9,5 @@ tornado_baseline*
 tornet_baseline*
 
 *venv
+nohup.out
+.nfs*

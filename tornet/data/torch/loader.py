@@ -81,19 +81,24 @@ def make_torch_loader(data_root: str,
         if not tilt_last:
             transform_list.append(lambda d: pp.permute_dims(d,(0,3,1,2)))
 
-        transform_list.append(
+        # transform_list.append(
+        transform_list = transform_list + [
             lambda d: pp.remove_time_dim(d),
             lambda d: pp.add_coordinates(d, include_az=include_az, tilt_last=tilt_last, backend=torch),
             lambda d: pp.split_x_y(d)
-        )
+        ]
 
         if weights:
             transform_list.append(lambda xy: pp.compute_sample_weight(*xy, **weights, backend=torch))
         
         if select_keys is not None:
             transform_list.append(
-                lambda xy: pp.select_keys(xy[0],keys=select_keys)+xy[1:]
+                lambda xy: (pp.select_keys(xy[0],keys=select_keys),)+xy[1:]
             )
+        # if select_keys is not None:
+        #     transform_list.append(
+        #         lambda xy: pp.select_keys(xy[0],keys=select_keys)+xy[1:]
+        #     )
             
          # Dataset, with preprocessing
         transform = transforms.Compose(transform_list)

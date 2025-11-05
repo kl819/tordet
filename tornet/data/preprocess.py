@@ -11,6 +11,7 @@ Delivered to the U.S. Government with Unlimited Rights, as defined in DFARS Part
 """
 from typing import Dict, List
 import numpy as np
+import torch
 from tornet.data.constants import ALL_VARIABLES
 
 
@@ -142,6 +143,9 @@ def compute_sample_weight(x,y,wN=1.0,w0=1.0,w1=1.0,w2=1.0,wW=0.5, backend=np):
     1           w1
     2+          w2
     """
+    if backend==torch:
+        backend=np
+        # weights = backend.ones_like(torch.from_numpy(np.array(y)), dtype=float)
     weights = backend.ones_like(y, dtype=float)
     ef = x['ef_number']
     warn = x['category'] == 2  # warnings
