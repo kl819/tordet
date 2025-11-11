@@ -16,6 +16,8 @@ import numpy as np
 import json
 import shutil
 import keras
+import keras.backend as K
+import torch
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -67,6 +69,42 @@ DEFAULT_CONFIG={
     'dataloader':"keras",
     'dataloader_kwargs': {}
 }
+
+def focal_loss(alpha=0.25, gamma=2.0, from_logits=True):
+    """Binary focal loss for imbalanced classification using Keras ops.
+
+    Returns a function (y_true, y_pred) compatible with Keras.
+    If from_logits=True the implementation applies a sigmoid to predictions
+    before using the binary_crossentropy loss function. This keeps the
+    implementation backend-agnostic (no direct tensorflow import).
+    """
+
+    bce_fn = keras.losses.BinaryCrossentropy(from_logits=from_logits)
+
+    def loss_fn(y_true, y_pred):
+        # ensure same dtype
+        # y_true_cast = K.cast(y_true, y_pred.dtype)
+        
+        # torch specific
+        y_true_cast = y_true.to(y_pred.dtype)
+
+        # bce: if from_logits is True, bce_fn will internally handle logits
+        bce = bce_fn(y_true_cast, y_pred)
+
+        # get probabilities
+        if from_logits:
+            p = torch.sigmoid(y_pred)
+        else:
+            p = y_pred
+
+        p_t = y_true_cast * p + (1.0 - y_true_cast) * (1.0 - p)
+        alpha_factor = y_true_cast * alpha + (1.0 - y_true_cast) * (1.0 - alpha)
+        modulating_factor = torch.pow((1.0 - p_t), gamma)
+
+        loss = alpha_factor * modulating_factor * bce
+        return torch.mean(loss)
+
+    return loss_fn
 
 def main(config):
     # Gather all hyperparams
@@ -128,6 +166,8 @@ def main(config):
         loss = keras.losses.Hinge() # automatically converts labels to -1,1
     elif loss_fn.lower()=='mae':
         loss = lambda yt,yp: mae_loss(yt,yp)
+    elif loss_fn.lower()=='focal':
+        loss = focal_loss(alpha=0.5, from_logits=from_logits)
     else:
         raise RuntimeError('unknown loss %s' % loss_fn)
 
@@ -165,7 +205,7 @@ def main(config):
         json.dump({'config':config},f)
     # Copy the training script
     shutil.copy(__file__, os.path.join(expdir,'train.py')) 
-    
+
     # Callbacks
     tboard_dir, checkpoints_dir=make_callback_dirs(expdir)
     checkpoint_name=os.path.join(checkpoints_dir, 'tornadoDetector'+'_{epoch:03d}.keras' )

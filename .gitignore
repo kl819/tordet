@@ -7,9 +7,12 @@ experiments/
 lightning_logs/
 tornado_baseline*
 tornet_baseline*
+#tornado_*/
+*None-None
+tornet_*
 
 *venv
-*nohup.out
+*nohup*.out
 .nfs*
 latest
 logs/
